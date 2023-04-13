@@ -1,0 +1,32 @@
+< THE SYMBOL TABLE >  Conta.exe  --  emu8086 assembler version: 4.08 
+===================================================================================================
+Name                     	Offset    	Size      	Type      	Segment   
+===================================================================================================
+STACK                    	00000     	-5        	SEGMENT   	(ITSELF)  
+DATA                     	00011     	-5        	SEGMENT   	(ITSELF)  
+NUMBER                   	00000     	1         	VAR       	data      
+SHOW                     	00004     	1         	VAR       	data      
+COD7SEG                  	00008     	1         	VAR       	data      
+GET_KEY                  	00012     	1         	VAR       	data      
+KEY                      	00013     	1         	VAR       	data      
+OLDINTV                  	00014     	2         	VAR       	data      
+CODE                     	00013     	-5        	SEGMENT   	(ITSELF)  
+START                    	00000     	-1        	LABEL     	code      
+MAIN                     	00000     	-1        	NEAR      	code      
+CYCLE                    	00024     	-1        	LABEL     	code      
+CONV7SEG                 	00038     	-1        	NEAR      	code      
+CYCLECV                  	0003E     	-1        	LABEL     	code      
+PRINTD                   	0004B     	-1        	NEAR      	code      
+CYCLEPR                  	00050     	-1        	LABEL     	code      
+CONTA                    	00081     	-1        	NEAR      	code      
+INC_TENS                 	0008E     	-1        	LABEL     	code      
+INC_HUND                 	000A0     	-1        	LABEL     	code      
+INC_THOU                 	000B2     	-1        	LABEL     	code      
+RST_THOU                 	000C4     	-1        	LABEL     	code      
+GO_BACK                  	000C9     	-1        	LABEL     	code      
+DELAY                    	000CA     	-1        	NEAR      	code      
+INTV40                   	000D0     	-1        	FAR       	code      
+===================================================================================================
+[ 1/10/2021  --  10:29:29 a. m. ] 
+< END >
+ 

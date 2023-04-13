@@ -1,0 +1,197 @@
+;--------------------------------------------------------
+;Universidad Pedagogica y Tecnologica de Colombia UPTC
+;Facultad Seccional Sogamoso
+;Escuela de Ingenieria Electronica
+;--------------------------------------------------------
+;Microprocessors Course
+;Description: Example of using processes,
+;             calling to subroutines and handling of
+;             peripherals in assembler for Intel x86
+;Author:      Wilson Javier Perez Holguin
+;Date:        01-10-2021
+;--------------------------------------------------------
+
+.model SMALL
+.8086
+
+.stack
+DB      64 DUP ?
+
+.data
+number     DB  0,0,0,0
+show    DB  3FH,3FH,3FH,3FH
+cod7seg DB  3FH,06h,5BH,4FH,66H,
+DB  6DH,7DH,07H,7FH,67H
+get_key DB  ?
+key     DB  ?
+oldintv DD  ?     ; 4 BYTES (2-IP 2-CS)
+
+;  BCD     7-Seg
+; Digit     Code
+;    0        3FH
+;     1        06H
+;     2        5BH
+;     3        4FH
+;     4        66H
+;     5        6DH
+;     6        7DH
+;     7        07H
+;     8        7FH
+;     9        67H
+
+.CODE
+
+START:
+
+MAIN    PROC NEAR
+
+
+;Installation of the new interrupt vector
+;Option I (Using the function 31h of the INT 21h)
+mov ax,0
+mov ds,ax
+
+cli            ; CLEAR INTERRUPT ENABLE
+
+; Initializing the new interrupt vector 80h
+mov si, 40h*4
+mov ax, offset INTV40
+mov bx, seg INTV40
+mov [si], ax
+mov [si+2], bx
+
+sti            ; SET INTERRUPT ENABLE
+
+mov ax,@DATA
+mov ds,ax
+
+mov ax,ds
+mov es,ax    ; ES = DS
+
+
+;PPI Initialization
+mov dx,0206h
+mov al,81h
+out dx,al
+
+cycle:  ;Main cycle
+call CONV7SEG
+call PRINTD
+call CONTA
+call DELAY
+jmp  cycle
+
+mov ax,4C00h
+int 21h
+
+;Return to another subroutine or to OS
+ret
+
+MAIN    ENDP
+
+
+
+CONV7SEG PROC NEAR USES BX SI
+mov  si,0
+lea  bx,cod7seg     ;Start address of 7-Seg code table
+cyclecv:
+mov  al,number[si]  ;Reading the number to be translated
+xlat                ;BCD to 7-Seg translation
+mov  show[si],al    ;Writing the translated number
+inc  si
+cmp  si,4
+jne  cyclecv
+ret
+CONV7SEG ENDP
+
+
+
+PRINTD  PROC NEAR
+;Process to print on the 7-Seg display
+mov bl,0FEh         ;Strobe init value   1111_1110
+mov si,0
+cyclepr:
+;LIGHTS ON
+mov dx,0202h
+mov al,show[si]     ;Reading the number to show
+out dx,al
+
+mov dx,0200h
+mov al,bl           ;Strobe
+out dx,al
+
+;GETTING THE KEYBOARD CODE
+shl al,4
+mov get_key,al
+mov dx,0204h        ;get_key <= PTOC(L)
+in  al,dx
+and al,0Fh
+or  get_key,al
+
+;LIGHTS OFF
+mov dx,0200h
+mov al,0FFh
+out dx,al
+
+;PREPARE THE NEXT DATA PRINTING
+rol bl,1
+inc si
+cmp si,4
+jne cyclepr
+ret
+PRINTD  ENDP
+
+
+
+CONTA   PROC NEAR
+;Counting routine process
+inc number[3]
+cmp number[3],10
+je  inc_tens
+jmp go_back
+inc_tens:
+mov number[3],0
+inc number[2]
+cmp number[2],10
+je  inc_hund
+jmp go_back
+inc_hund:
+mov number[2],0
+inc number[1]
+cmp number[1],10
+je  inc_thou
+jmp go_back
+inc_thou:
+mov number[1],0
+inc number[0]
+cmp number[0],10
+je  rst_thou
+jmp go_back
+rst_thou:
+mov number[1],0
+go_back:
+ret
+CONTA   ENDP
+
+
+DELAY   PROC NEAR
+;Delay process
+mov cx,3000
+loop $
+ret
+DELAY   ENDP
+
+
+; ***********   ISP  ***********
+INTV40  PROC FAR
+mov  number[0],0
+mov  number[1],0
+mov  number[2],0
+mov  number[3],0
+sti
+iret
+INTV40  ENDP
+; ******************************
+
+END START
+

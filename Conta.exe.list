@@ -1,0 +1,256 @@
+EMU8086 GENERATED LISTING. MACHINE CODE <- SOURCE.
+ 
+Conta.exe -- emu8086 assembler version: 4.08  
+ 
+[ 1/10/2021  --  10:29:29 a. m. ] 
+ 
+===================================================================================================
+[LINE]     LOC: MACHINE CODE                          SOURCE
+===================================================================================================
+ 
+[   1]        :                                       ;--------------------------------------------------------
+[   2]        :                                       ;Universidad Pedagogica y Tecnologica de Colombia UPTC
+[   3]        :                                       ;Facultad Seccional Sogamoso
+[   4]        :                                       ;Escuela de Ingenieria Electronica
+[   5]        :                                       ;--------------------------------------------------------
+[   6]        :                                       ;Microprocessors Course
+[   7]        :                                       ;Description: Example of using processes,
+[   8]        :                                       ;             calling to subroutines and handling of
+[   9]        :                                       ;             peripherals in assembler for Intel x86
+[  10]        :                                       ;Author:      Wilson Javier Perez Holguin
+[  11]        :                                       ;Date:        01-10-2021
+[  12]        :                                       ;--------------------------------------------------------
+[  13]        :                                       
+[  14]        :                                       .model SMALL
+[  15]        :                                       .8086
+[  16]        :                                       
+[  17]        :                                       .stack
+[  18]    0100: 40                                    	DB      64 DUP ?
+[  19]        :                                       
+[  20]        :                                       .data
+[  21]    0110: 00 00 00 00                           	number 	DB  0,0,0,0
+[  22]    0114: 3F 3F 3F 3F                           	show    DB  3FH,3FH,3FH,3FH
+[  23]    0118: 3F 06 5B 4F 66                        	cod7seg DB  3FH,06h,5BH,4FH,66H,
+[  24]    011D: 6D 7D 07 7F 67                        	        DB  6DH,7DH,07H,7FH,67H
+[  25]    0122: 00                                    	get_key DB  ?
+[  26]    0123: 00                                    	key     DB  ?
+[  27]    0124: 00 00 00 00                           	oldintv DD  ?	 ; 4 BYTES (2-IP 2-CS)
+[  28]        :                                       
+[  29]        :                                       	;  BCD     7-Seg
+[  30]        :                                       	; Digit     Code
+[  31]        :                                       	;	0		3FH
+[  32]        :                                       	; 	1		06H
+[  33]        :                                       	; 	2		5BH
+[  34]        :                                       	; 	3		4FH
+[  35]        :                                       	; 	4		66H
+[  36]        :                                       	; 	5		6DH
+[  37]        :                                       	; 	6		7DH
+[  38]        :                                       	; 	7		07H
+[  39]        :                                       	; 	8		7FH
+[  40]        :                                       	; 	9		67H
+[  41]        :                                       
+[  42]        :                                       .CODE
+[  43]        :                                       
+[  44]    0130:                                       START:
+[  45]        :                                       
+[  46]    0130:                                       MAIN	PROC NEAR
+[  47]        :                                       
+[  48]        :                                       		
+[  49]        :                                       		;Installation of the new interrupt vector
+[  50]        :                                       		;Option I (Using the function 31h of the INT 21h)
+[  51]    0130: B8 00 00                              		mov ax,0
+[  52]    0133: 8E D8                                 		mov ds,ax
+[  53]        :                                       		
+[  54]    0135: FA                                    		cli			; CLEAR INTERRUPT ENABLE
+[  55]        :                                       		
+[  56]        :                                       	    ; Initializing the new interrupt vector 80h
+[  57]    0136: BE 00 01                              mov si, 40h*4      	
+[  58]    0139: B8 D0 00                              mov ax, offset INTV40
+[  59]    013C: BB 13 00                              mov bx, seg INTV40
+[  60]    013F: 89 04                                 	    mov [si], ax
+[  61]    0141: 89 5C 02                              mov [si+2], bx
+[  62]        :                                       		
+[  63]    0144: FB                                    sti			; SET INTERRUPT ENABLE
+[  64]        :                                       
+[  65]    0145: B8 11 00                              		mov ax,@DATA
+[  66]    0148: 8E D8                                 		mov ds,ax
+[  67]        :                                       
+[  68]    014A: 8C D8                                 mov ax,ds
+[  69]    014C: 8E C0                                 mov es,ax	; ES = DS
+[  70]        :                                       	
+[  71]        :                                       		
+[  72]        :                                       		;PPI Initialization
+[  73]    014E: BA 06 02                              		mov dx,0206h
+[  74]    0151: B0 81                                 		mov al,81h
+[  75]    0153: EE                                    		out dx,al
+[  76]        :                                       		
+[  77]    0154:                                       cycle:  ;Main cycle
+[  78]    0154: E8 11 00                              call CONV7SEG
+[  79]    0157: E8 21 00                              call PRINTD
+[  80]    015A: E8 54 00                              call CONTA
+[  81]    015D: E8 9A 00                              call DELAY
+[  82]    0160: EB F2                                 jmp  cycle
+[  83]        :                                       
+[  84]    0162: B8 00 4C                              mov ax,4C00h
+[  85]    0165: CD 21                                 int 21h
+[  86]        :                                       		
+[  87]        :                                       		;Return to another subroutine or to OS
+[  88]    0167: C3                                    ret
+[  89]        :                                       
+[  90]        :                                       MAIN    ENDP
+[  91]        :                                       
+[  92]        :                                       
+[  93]        :                                       
+[  94]    0168:                                       CONV7SEG PROC NEAR USES BX SI
+[  95]    0168: BE 00 00                              mov  si,0
+[  96]    016B: BB 08 00                              lea  bx,cod7seg     ;Start address of 7-Seg code table
+[  97]    016E:                                       cyclecv:
+[  98]    016E: 8A 04                                 mov  al,number[si]  ;Reading the number to be translated
+[  99]    0170: D7                                    xlat                ;BCD to 7-Seg translation
+[ 100]    0171: 88 44 04                              mov  show[si],al    ;Writing the translated number
+[ 101]    0174: 46                                    inc  si
+[ 102]    0175: 83 FE 04                              cmp  si,4
+[ 103]    0178: 75 F4                                 jne  cyclecv
+[ 104]    017A: C3                                    ret
+[ 105]        :                                       CONV7SEG ENDP
+[ 106]        :                                       
+[ 107]        :                                       
+[ 108]        :                                       
+[ 109]    017B:                                       PRINTD  PROC NEAR
+[ 110]        :                                       ;Process to print on the 7-Seg display
+[ 111]    017B: B3 FE                                 mov bl,0FEh         ;Strobe init value   1111_1110
+[ 112]    017D: BE 00 00                              		mov si,0
+[ 113]    0180:                                       cyclepr:
+[ 114]        :                                       		;LIGHTS ON
+[ 115]    0180: BA 02 02                              		mov dx,0202h
+[ 116]    0183: 8A 44 04                              		mov al,show[si]     ;Reading the number to show
+[ 117]    0186: EE                                    		out dx,al
+[ 118]        :                                       
+[ 119]    0187: BA 00 02                              		mov dx,0200h
+[ 120]    018A: 8A C3                                 		mov al,bl           ;Strobe
+[ 121]    018C: EE                                    		out dx,al
+[ 122]        :                                       		
+[ 123]        :                                       		;GETTING THE KEYBOARD CODE
+[ 124]    018D: D0 E0 D0 E0 D0 E0 D0 E0               		shl al,4
+[ 125]    0195: A2 12 00                              		mov get_key,al
+[ 126]    0198: BA 04 02                              		mov dx,0204h        ;get_key <= PTOC(L)
+[ 127]    019B: EC                                    		in  al,dx
+[ 128]    019C: 24 0F                                 		and al,0Fh
+[ 129]    019E: 08 06 12 00                           		or  get_key,al
+[ 130]        :                                       		
+[ 131]        :                                       		;LIGHTS OFF
+[ 132]    01A2: BA 00 02                              		mov dx,0200h
+[ 133]    01A5: B0 FF                                 		mov al,0FFh
+[ 134]    01A7: EE                                    		out dx,al
+[ 135]        :                                       		
+[ 136]        :                                       		;PREPARE THE NEXT DATA PRINTING
+[ 137]    01A8: D0 C3                                 		rol bl,1
+[ 138]    01AA: 46                                    	    inc si
+[ 139]    01AB: 83 FE 04                              		cmp si,4
+[ 140]    01AE: 75 D0                                 		jne cyclepr
+[ 141]    01B0: C3                                    		ret
+[ 142]        :                                       PRINTD  ENDP
+[ 143]        :                                       
+[ 144]        :                                       
+[ 145]        :                                       
+[ 146]    01B1:                                       CONTA   PROC NEAR
+[ 147]        :                                       ;Counting routine process
+[ 148]    01B1: FE 06 03 00                           inc number[3]
+[ 149]    01B5: 80 3E 03 00 0A                        cmp number[3],10
+[ 150]    01BA: 74 02                                 je  inc_tens
+[ 151]    01BC: EB 3B                                 jmp go_back
+[ 152]    01BE:                                       inc_tens:
+[ 153]    01BE: C6 06 03 00 00                        mov number[3],0
+[ 154]    01C3: FE 06 02 00                           inc number[2]
+[ 155]    01C7: 80 3E 02 00 0A                        cmp number[2],10
+[ 156]    01CC: 74 02                                 je  inc_hund
+[ 157]    01CE: EB 29                                 jmp go_back
+[ 158]    01D0:                                       inc_hund:
+[ 159]    01D0: C6 06 02 00 00                        mov number[2],0
+[ 160]    01D5: FE 06 01 00                           inc number[1]
+[ 161]    01D9: 80 3E 01 00 0A                        cmp number[1],10
+[ 162]    01DE: 74 02                                 je  inc_thou
+[ 163]    01E0: EB 17                                 jmp go_back
+[ 164]    01E2:                                       inc_thou:
+[ 165]    01E2: C6 06 01 00 00                        mov number[1],0
+[ 166]    01E7: FE 06 00 00                           inc number[0]
+[ 167]    01EB: 80 3E 00 00 0A                        cmp number[0],10
+[ 168]    01F0: 74 02                                 je  rst_thou
+[ 169]    01F2: EB 05                                 jmp go_back
+[ 170]    01F4:                                       rst_thou:
+[ 171]    01F4: C6 06 01 00 00                        mov number[1],0
+[ 172]    01F9:                                       go_back:
+[ 173]    01F9: C3                                    ret
+[ 174]        :                                       CONTA   ENDP
+[ 175]        :                                       
+[ 176]        :                                       
+[ 177]    01FA:                                       DELAY   PROC NEAR
+[ 178]        :                                       ;Delay process
+[ 179]    01FA: B9 B8 0B                              mov cx,3000
+[ 180]    01FD: E2 FE                                 loop $
+[ 181]    01FF: C3                                    ret
+[ 182]        :                                       DELAY   ENDP
+[ 183]        :                                       
+[ 184]        :                                       
+[ 185]        :                                       ; ***********   ISP  ***********
+[ 186]    0200:                                       INTV40  PROC FAR
+[ 187]    0200: C6 06 00 00 00                        mov  number[0],0
+[ 188]    0205: C6 06 01 00 00                        mov  number[1],0
+[ 189]    020A: C6 06 02 00 00                        mov  number[2],0
+[ 190]    020F: C6 06 03 00 00                        mov  number[3],0
+[ 191]    0214: FB                                    sti
+[ 192]    0215: CF                                    iret
+[ 193]        :                                       INTV40  ENDP
+[ 194]        :                                       ; ******************************
+[ 195]        :                                       
+[ 196]        :                                       END START
+[ 197]        :                                       
+ 
+===================================================================================================
+ 
+EXE HEADER - bytes from 0000 to 01FF inclusive.
+
+0000: 4D      -   exe signature (M)
+0001: 5A      -   exe signature (Z)
+0002: 16      -   bytes on last page (l.byte)
+0003: 00      -   bytes on last page (h.byte)
+0004: 03      -   512 byte pages in file (l.byte)
+0005: 00      -   512 byte pages in file (h.byte)
+0006: 02      -   relocations (l.byte)
+0007: 00      -   relocations (h.byte)
+0008: 20      -   paragraphs in header (l.byte)
+0009: 00      -   paragraphs in header (h.byte)
+000A: 00      -   minimum memory (l.byte)
+000B: 00      -   minimum memory (h.byte)
+000C: FF      -   maximum memory (l.byte)
+000D: FF      -   maximum memory (h.byte)
+000E: 00      -   SS - stack segment (l.byte)
+000F: 00      -   SS - stack segment (h.byte)
+0010: 00      -   SP - stack pointer (l.byte)
+0011: 01      -   SP - stack pointer (h.byte)
+0012: 9D      -   check sum (l.byte)
+0013: 75      -   check sum (h.byte)
+0014: 00      -   IP - instruction pointer (l.byte)
+0015: 00      -   IP - instruction pointer (h.byte)
+0016: 13      -   CS - code segment (l.byte)
+0017: 00      -   CS - code segment (h.byte)
+0018: 1E      -   relocation table adress (l.byte)
+0019: 00      -   relocation table adress (h.byte)
+001A: 00      -   overlay number (l.byte)
+001B: 00      -   overlay number (h.byte)
+001C: 01      -   signature (l.byte)
+001D: 00      -   signature (h.byte)
+001E: 0D      -   relocation table - offset inside segment (l.byte)
+001F: 00      -   relocation table - offset inside segment (h.byte)
+0020: 13      -   relocation table - segment anchor (l.byte)
+0021: 00      -   relocation table - segment anchor (h.byte)
+0022: 16      -   relocation table - offset inside segment (l.byte)
+0023: 00      -   relocation table - offset inside segment (h.byte)
+0024: 13      -   relocation table - segment anchor (l.byte)
+0025: 00      -   relocation table - segment anchor (h.byte)
+0026 to 01FF  -   reserved relocation area  (00) 
+
+
+
+
+===================================================================================================
